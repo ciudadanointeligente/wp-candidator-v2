@@ -8,7 +8,7 @@
   Author URI: http://www.ciudadanointeligente.org
   License: Copyleft
  */
-define('URLBASE','http://127.0.0.1:8000');
+define('URLBASE','http://candideit.org');
 define('API_VERSION', '/api/v2/');
 
 function canv2_candideitorg_init() {
