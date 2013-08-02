@@ -228,7 +228,7 @@ add_action( 'wp_enqueue_scripts', 'my_scripts_method' );
 
 function canv2_ajaxurl() {
 ?>
-<script type="text/javascript">
+<script data-cfasync="false" type="text/javascript">
   var ajaxurl = '<?php echo admin_url("admin-ajax.php"); ?>';
 </script>
 <?php
