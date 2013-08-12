@@ -3,8 +3,11 @@
         <div class="span9">
             <div class="row-fluid">
                 <?php
+                $candidates = __('Verify your username and your API Key', 'candideitorg');
+                
                 $cnt_candidatos = 1;
-                foreach ($aCandideits as $c) {
+                if(count($aCandideits)) {
+                    foreach ($aCandideits as $c) {
                 ?>
                 <div class="span3">
                     <div>
@@ -13,22 +16,31 @@
                     </div>
                 </div>
                 <?php
-                    if($cnt_candidatos==4)
-                        echo '</div><div class="row-fluid">';
+                        if($cnt_candidatos==4)
+                            echo '</div><div class="row-fluid">';
 
-                    if($cnt_candidatos==4)
-                        $cnt_candidatos = 1;
-                    else
-                        $cnt_candidatos++;
+                        if($cnt_candidatos==4)
+                            $cnt_candidatos = 1;
+                        else
+                            $cnt_candidatos++;
+                    }
+                } else {
+                    echo $candidates;
                 }
                 ?>
             </div>
         </div>
         <div class="span3">
+            <?php
+            if(count($aCandideits)) {
+            ?>
             <ul>
                 <li><a href="#frente-a-frente" class="frente-a-frente">Frente a frente</a></li>
                 <li>Encuentra tu 1/2 naranja</li>
             </ul>
+            <?php
+            }
+            ?>
         </div>
     </div>
     <div class="perfil row-fluid">

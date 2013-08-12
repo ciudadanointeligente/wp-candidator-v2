@@ -168,13 +168,17 @@ function canv2_loscandidatos() {
 
   if ( $post_slug == 'candideitorg' ) {
     $url = URLBASE.API_VERSION.'election/'. get_option('candideitv2_election_id') .'/?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
-    $json_info = file_get_contents($url);
-    $aElections = json_decode($json_info);
+    $get_status = get_headers($url);
+    
+    if($get_status[0] == 'HTTP/1.1 200 OK' OR $get_status[0] == 'HTTP/1.0 200 OK') {
+      $json_info = file_get_contents($url);
+      $aElections = json_decode($json_info);
 
-    foreach ($aElections->candidates as $candidate) {
-        $url = URLBASE. $candidate .'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
-        $json_info = file_get_contents($url);
-        $aCandideits[] = json_decode($json_info);
+      foreach ($aElections->candidates as $candidate) {
+          $url = URLBASE. $candidate .'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+          $json_info = file_get_contents($url);
+          $aCandideits[] = json_decode($json_info);
+      }
     }
 
     include "candideitorg-front.php";
@@ -184,10 +188,14 @@ function canv2_loscandidatos() {
 add_filter( 'the_content', 'canv2_loscandidatos' );
 
 function canv2_theme_styles() { 
+  $url_bootstrap = 'http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css';
+  wp_register_style( 'custom-style-bootstrap', $url_bootstrap , array(), date('Ymd'), 'all' );
+
   $url_plugin = plugins_url('/css/candideitorg.css', __FILE__);
   wp_register_style( 'custom-style', $url_plugin , array(), date('Ymd'), 'all' );
 
   wp_enqueue_style( 'custom-style' );
+  wp_enqueue_style( 'custom-style-bootstrap' );
 }
 add_action('wp_enqueue_scripts', 'canv2_theme_styles');
 
