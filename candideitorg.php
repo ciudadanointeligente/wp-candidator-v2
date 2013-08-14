@@ -19,6 +19,7 @@ function canv2_candideitorg_init() {
 
 function canv2_activate() 
 {
+
   $_name      = 'candideitorgv2';
   $page_title = 'Candideitorg';
   $page_name  = $_name;
@@ -62,6 +63,7 @@ function canv2_activate()
 
   delete_option($_name.'_page_id');
   add_option($_name.'_page_id', $page_id);
+  
 }
 
 register_activation_hook( __FILE__, 'canv2_activate' );
@@ -106,7 +108,6 @@ function canv2_deleteOptions()
 function canv2_admin_action() {
   add_management_page( "Candideit.org", "Candideit.org-v2", 1, "candideitorgv2", 'canv2_configuration' );
 }
-
 add_action('admin_menu', 'canv2_admin_action' );
 
 function canv2_configuration() {
@@ -182,9 +183,10 @@ function canv2_loscandidatos() {
     }
 
     include "candideitorg-front.php";
+  } else {
+    echo get_the_content();
   }
 }
-
 add_filter( 'the_content', 'canv2_loscandidatos' );
 
 function canv2_theme_styles() { 
@@ -251,10 +253,12 @@ function get_front_candideit_data($candidate_uri=''){
   //get image of a candidate
   $url_candidate = URLBASE.$uri.'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
   $aDataCandidate = json_decode(file_get_contents($url_candidate));
+
   $image_candidate = '<div><img src="'.$aDataCandidate->photo.'" border="0" alt="'.$aDataCandidate->name.'"></div>';
-  $name_candidate = '<p>'.$aDataCandidate->name.'</p>';
+  $name_candidate = '<div class="row-fluid"><div class="span12"><p>'.$aDataCandidate->name.'</p></div></div>';
+
   // get social links (twitter, facebook, g+)
-  $social_media = '<ul>';
+  $social_media = '<ul class="inline">';
   foreach($aDataCandidate->links as $link) {
     $url_link = URLBASE.$link.'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
     $aDataLink = json_decode(file_get_contents($url_link));
@@ -263,8 +267,14 @@ function get_front_candideit_data($candidate_uri=''){
   }
   $social_media .= '</ul>';
 
+  $img_social = '<div class="row-fluid">';
+  $img_social .= '<div class="span3">'.$image_candidate.'</div>';
+  $img_social .= '<div class="span6"><h2>'.$aDataCandidate->name.'</h2></div>';
+  $img_social .= '<div class="span3">'.$social_media.'</div>';
+  $img_social .= '</div>';
+
   //get personal data (age, profession, etc)
-  $canideit_personal_data = '<ul>';
+  $canideit_personal_data = '<div class="row-fluid"><table class="table table-striped table-bordered">';
   foreach($aDataCandidate->personal_data_candidate as $personal_data) {
     $url_personal_data = URLBASE.$personal_data.'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
     $aDataPersonalData = json_decode(file_get_contents($url_personal_data));
@@ -272,9 +282,9 @@ function get_front_candideit_data($candidate_uri=''){
     $url = URLBASE.$aDataPersonalData->personal_data.'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
     $aDataPersonalDetail = json_decode(file_get_contents($url));
 
-    $canideit_personal_data .= '<li>'.$aDataPersonalDetail->label.' : '.$aDataPersonalData->value.'</li>';
+    $canideit_personal_data .= '<tr><td>'.$aDataPersonalDetail->label.'</td><td>'.$aDataPersonalData->value.'</td></tr>';
   }
-  $canideit_personal_data .= '</ul>';
+  $canideit_personal_data .= '</table></div>';
 
   //get election for obtain category, question related to category and answer for a candidate
   $url_election = URLBASE.API_VERSION.'election/'.get_option('candideitv2_election_id').'/?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
@@ -314,7 +324,7 @@ function get_front_candideit_data($candidate_uri=''){
     $div_container_candidate = '<div class="information-about-candidate-vs">';
   }
   
-  $div_container_candidate .= $image_candidate.$name_candidate.$social_media.$canideit_personal_data.$categories.$question_answer;
+  $div_container_candidate .= $img_social.$canideit_personal_data.$categories.$question_answer;
 
   if(!$candidate_uri) {
     $div_container_candidate .= '</div></div></div>';
