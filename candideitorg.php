@@ -119,12 +119,12 @@ function canv2_configuration() {
   $msj = '';
   $msj_class = '';
 
-  if ($_POST['candideit_update']) {
-      ( $_POST['candideitv2_api_key'] ) ? update_option('candideitv2_api_key', $_POST['candideitv2_api_key']) : update_option('candideitv2_api_key', '');
-      ( $_POST['candideitv2_username'] ) ? update_option('candideitv2_username', $_POST['candideitv2_username']) : update_option('candideitv2_username', '');
-      ( $_POST['candideitv2_election_id'] ) ? update_option('candideitv2_election_id', $_POST['candideitv2_election_id']) : update_option('candideitv2_election_id', '');
+  if ( isset($_POST['candideit_update']) ) {
+      ( isset($_POST['candideitv2_api_key']) ) ? update_option('candideitv2_api_key', filter_var($_POST['candideitv2_api_key'],FILTER_SANITIZE_SPECIAL_CHARS) ) : update_option('candideitv2_api_key', '');
+      ( isset($_POST['candideitv2_username']) ) ? update_option('candideitv2_username', filter_var($_POST['candideitv2_username'],FILTER_SANITIZE_SPECIAL_CHARS) ) : update_option('candideitv2_username', '');
+      ( isset($_POST['candideitv2_election_id']) ) ? update_option('candideitv2_election_id', filter_var($_POST['candideitv2_election_id'],FILTER_SANITIZE_NUMBER_INT) ) : update_option('candideitv2_election_id', '');
 
-      if ( ($_POST['candideitv2_api_key']) && ($_POST['candideitv2_username']) ) {
+      if ( (isset($_POST['candideitv2_api_key'])) && (isset($_POST['candideitv2_username'])) ) {
           $msj = __( 'Update data successfully :)', 'candideitorg' );
           $msj_class = 'updated';
       }
@@ -167,8 +167,8 @@ function canv2_loscandidatos() {
 
   global $post;
   $post_slug = $post->post_name;
-  $mod = htmlentities($_GET['mod']);
-  $cid = intval($_GET['cid']);
+  $mod = filter_var($_GET['mod'], FILTER_SANITIZE_STRING);
+  $cid = filter_var($_GET['cid'], FILTER_SANITIZE_NUMBER_INT);
 
   if ( $post_slug == 'candideitorg' ) {
     
@@ -326,9 +326,9 @@ function canv2_load_script() {
 add_action('admin_enqueue_scripts','canv2_load_script');
 
 function canv2_proccess_candidates_ajax() {
-  $electionId = $_POST['electionId'];
-  $username = $_POST['username'];
-  $apikey = $_POST['apikey'];
+  $electionId = filter_var($_POST['electionId'],FILTER_SANITIZE_NUMBER_INT);
+  $username = filter_var($_POST['username'],FILTER_SANITIZE_SPECIAL_CHARS);
+  $apikey = filter_var($_POST['apikey'],FILTER_SANITIZE_SPECIAL_CHARS);
 
   $url = URLBASE.API_VERSION.'election/'. $electionId .'/?format=json&username='. $username .'&api_key='. $apikey;
   
@@ -368,7 +368,7 @@ add_action('wp_head','canv2_ajaxurl');
 // function front
 function get_front_candideit_data($candidate_uri=''){
   //uri of a candidate
-  $uri = ($_POST['uri']) ? $_POST['uri'] : $candidate_uri;
+  $uri = (isset($_POST['uri'])) ? filter_var($_POST['uri'],FILTER_SANITIZE_SPECIAL_CHARS) : $candidate_uri;
 
   //get image of a candidate
   $url_candidate = URLBASE.$uri.'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
@@ -460,7 +460,7 @@ add_action('wp_ajax_get_front_candideit_data','get_front_candideit_data');
 add_action('wp_ajax_nopriv_get_front_candideit_data', 'get_front_candideit_data');
 
 function get_front_candideit_select(){
-  $uri_exclude = $_POST['exclude_candidate_uri'];
+  $uri_exclude = ( isset($_POST['exclude_candidate_uri']) ) ? filter_var($_POST['exclude_candidate_uri'],FILTER_SANITIZE_SPECIAL_CHARS) : '' ;
 
   $url_election = URLBASE.API_VERSION.'election/'. get_option('candideitv2_election_id') .'/?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
   $aDataElection = json_decode(file_get_contents($url_election));
@@ -484,7 +484,7 @@ add_action('wp_ajax_get_front_candideit_select','get_front_candideit_select');
 add_action('wp_ajax_nopriv_get_front_candideit_select', 'get_front_candideit_select');
 
 function get_data_candidate_vs() {
-  $candidate_uri = $_POST['candidate_uri'];
+  $candidate_uri = ( isset($_POST['candidate_uri']) ) ? filter_var($_POST['candidate_uri'],FILTER_SANITIZE_SPECIAL_CHARS) : '';
   
   get_front_candideit_data($candidate_uri);
 
@@ -494,7 +494,7 @@ add_action('wp_ajax_get_data_candidate_vs','get_data_candidate_vs');
 add_action('wp_ajax_nopriv_get_data_candidate_vs', 'get_data_candidate_vs');
 
 function get_candidate_data() {
-  $candidate_id = ( isset($_POST['first_candidate']) ) ? $_POST['first_candidate'] : $_POST['second_candidate'];
+  $candidate_id = ( isset($_POST['first_candidate']) ) ? filter_var($_POST['first_candidate'],FILTER_SANITIZE_NUMBER_INT) : filter_var($_POST['second_candidate'],FILTER_SANITIZE_NUMBER_INT);
   $class_name = ( isset($_POST['first_candidate']) ) ? 'first_candidate' : 'second_candidate';
 
   $url = URLBASE.API_VERSION.'candidate/'. $candidate_id .'/?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
