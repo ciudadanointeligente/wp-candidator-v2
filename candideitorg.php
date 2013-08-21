@@ -9,6 +9,7 @@
   License: Copyleft
  */
 define('URLBASE','http://candideit.org');
+// define('URLBASE','http://127.0.0.1:8000');
 define('API_VERSION', '/api/v2/');
 
 function canv2_candideitorg_init() {
@@ -166,42 +167,157 @@ function canv2_loscandidatos() {
 
   global $post;
   $post_slug = $post->post_name;
+  $mod = $_GET['mod'];
+  $cid = intval($_GET['cid']);
 
   if ( $post_slug == 'candideitorg' ) {
-    $url = URLBASE.API_VERSION.'election/'. get_option('candideitv2_election_id') .'/?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
-    $get_status = get_headers($url);
     
-    if($get_status[0] == 'HTTP/1.1 200 OK' OR $get_status[0] == 'HTTP/1.0 200 OK') {
-      $json_info = file_get_contents($url);
-      $aElections = json_decode($json_info);
+    switch($mod) {
+      case 'ficha':
+        $url = URLBASE.API_VERSION.'candidate/'. $cid .'/?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+        $get_status = get_headers($url);
 
-      foreach ($aElections->candidates as $candidate) {
-          $url = URLBASE. $candidate .'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+        if($get_status[0] == 'HTTP/1.1 200 OK' OR $get_status[0] == 'HTTP/1.0 200 OK') {
+          
+          $aCandidate = json_decode(file_get_contents($url));
+          $cnt = 0;
+          foreach($aCandidate->personal_data_candidate as $personal_data_candidate) {
+            $url = URLBASE.$personal_data_candidate .'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+            $aPersonalDataCandidate = json_decode(file_get_contents($url));
+            
+            $url = URLBASE.$aPersonalDataCandidate->personal_data .'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+            $aPersonalData = json_decode(file_get_contents($url));
+
+            $aData[$cnt]['label'] = $aPersonalData->label;
+            $aData[$cnt]['value'] = $aPersonalDataCandidate->value;
+
+            $cnt++;
+          }
+
+          foreach($aCandidate->links as $link) {
+            $url = URLBASE.$link .'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+            $aSocialLink = json_decode(file_get_contents($url));
+
+            $aSocial[$aSocialLink->name] = $aSocialLink->url;
+          }
+
+          $antecedentes = array();
+          
+          foreach($aCandidate->backgrounds_candidate as $bgc) {
+            $url = URLBASE.$bgc.'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+            $bgCandidate = json_decode(file_get_contents($url));
+            
+            $url = URLBASE.$bgCandidate->background.'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+            $background = json_decode(file_get_contents($url));
+            
+            $url = URLBASE.$background->background_category.'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+            $bg_category = json_decode(file_get_contents($url));
+            
+            $antecedentes[$bg_category->name][$background->name] = $bgCandidate->value;
+          }
+          include 'html/ficha.php';
+        } else {
+          include 'html/index.php';
+        }
+        
+      break;
+
+      case 'comparador':
+        $url = URLBASE.API_VERSION.'election/'. get_option('candideitv2_election_id') .'/?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+        $get_status = get_headers($url);
+
+        if($get_status[0] == 'HTTP/1.1 200 OK' OR $get_status[0] == 'HTTP/1.0 200 OK') {
+          $election = json_decode(file_get_contents($url));
+          $cnt = 0;
+          foreach($election->candidates as $c) {
+            $url = URLBASE. $c .'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+            $candidate = json_decode(file_get_contents($url));
+
+            $aCandidates[$cnt]['id'] = $candidate->id;
+            $aCandidates[$cnt]['name'] = $candidate->name;
+            $aCandidates[$cnt]['photo'] = $candidate->photo;
+            $cnt++;
+          }
+
+          $cnt = 0;
+          foreach($election->categories as $cat) {
+            $url = URLBASE. $cat .'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+            $categorie = json_decode(file_get_contents($url));
+
+            $aCategories[$cnt]['id'] = $categorie->id;
+            $aCategories[$cnt]['name'] = $categorie->name;
+
+            $cnt_y = 0;
+            foreach($categorie->questions as $question) {
+              $url = URLBASE. $question .'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+              $q = json_decode(file_get_contents($url));
+
+              $aCategories[$cnt]['questions'][$cnt_y]['q'] = $q->question;
+
+              foreach($q->answers as $answers) {
+                $url = URLBASE. $answers .'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+                $a = json_decode(file_get_contents($url));
+                if( in_array('/api/v2/candidate/'.$cid.'/', $a->candidates)) { $aCategories[$cnt]['questions'][$cnt_y]['a'] = $a->caption; } 
+              }
+
+              $cnt_y++;
+            }
+
+            $cnt++;
+          }
+
+          $url = URLBASE.API_VERSION.'candidate/'. $cid .'/?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+          $aCandidate = json_decode(file_get_contents($url));
+
+          include 'html/comparador.php';
+        } else {
+          include 'html/index.php';
+        }
+
+        
+        break;
+
+      default:
+        $url = URLBASE.API_VERSION.'election/'. get_option('candideitv2_election_id') .'/?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+        $get_status = get_headers($url);
+
+        if($get_status[0] == 'HTTP/1.1 200 OK' OR $get_status[0] == 'HTTP/1.0 200 OK') {
           $json_info = file_get_contents($url);
-          $aCandideits[] = json_decode($json_info);
-      }
-    }
+          $aElections = json_decode($json_info);
 
-    include "candideitorg-front.php";
+          foreach ($aElections->candidates as $candidate) {
+            $url = URLBASE. $candidate .'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+            $json_info = file_get_contents($url);
+            $aCandideits[] = json_decode($json_info);
+          }
+        }
+        include 'html/index.php';
+      break;
+    }
+    
   } else {
-    echo get_the_content();
+    return get_the_content();
   }
 }
 add_filter( 'the_content', 'canv2_loscandidatos' );
 
 function canv2_theme_styles() { 
   $url_bootstrap = 'http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css';
-  wp_register_style( 'custom-style-bootstrap', $url_bootstrap , array(), date('Ymd'), 'all' );
+  wp_register_style( 'canv2-style-bootstrap', $url_bootstrap , array(), date('Ymd'), 'all' );
+
+  $url_fontawesome = 'http://netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.min.css';
+  wp_register_style( 'canv2-style-fontawesome', $url_fontawesome , array(), date('Ymd'), 'all' );
 
   $url_plugin = plugins_url('/css/candideitorg.css', __FILE__);
-  wp_register_style( 'custom-style', $url_plugin , array(), date('Ymd'), 'all' );
+  wp_register_style( 'canv2-style', $url_plugin , array(), date('Ymd'), 'all' );
 
-  wp_enqueue_style( 'custom-style' );
-  wp_enqueue_style( 'custom-style-bootstrap' );
+  wp_enqueue_style( 'canv2-style-bootstrap' );
+  wp_enqueue_style( 'canv2-style-fontawesome' );
+  wp_enqueue_style( 'canv2-style' );
 }
 add_action('wp_enqueue_scripts', 'canv2_theme_styles');
 
-function canv2_load_script() {
+function canv2_load_script() {  
   wp_enqueue_script('canv2-admin_candideitorg', plugin_dir_url(__FILE__).'js/admin_candideitorg.js', array('jquery'));
 }
 add_action('admin_enqueue_scripts','canv2_load_script');
@@ -231,6 +347,7 @@ function canv2_proccess_candidates_ajax() {
 add_action('wp_ajax_canv2_get_candidates','canv2_proccess_candidates_ajax');
 
 function my_scripts_method() {
+  wp_enqueue_script('canv2-fontawesome', 'http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/js/bootstrap.min.js', array('jquery'));
   wp_enqueue_script( 'custom-script', plugins_url('/js/front_candideitorg.js', __FILE__), array( 'jquery' ) );
 }
 add_action( 'wp_enqueue_scripts', 'my_scripts_method' );
@@ -372,3 +489,94 @@ function get_data_candidate_vs() {
 }
 add_action('wp_ajax_get_data_candidate_vs','get_data_candidate_vs');
 add_action('wp_ajax_nopriv_get_data_candidate_vs', 'get_data_candidate_vs');
+
+function get_second_candidate_data() {
+  $second_candidate = $_POST['second_candidate'];
+
+  $url = URLBASE.API_VERSION.'candidate/'. $second_candidate .'/?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+  $aCandidate = json_decode(file_get_contents($url));
+
+  $retorna = '<div class="row-fluid second_candidate" style="margin-bottom: 10px">
+        <div class="span4">
+          <img src="'. $aCandidate->photo .'" alt="'. $aCandidate->name .'">
+        </div>
+        <div class="span8">
+          <h4>'. $aCandidate->name .'</h4>
+        </div>
+      </div>';
+
+  $url = URLBASE.API_VERSION.'election/'. get_option('candideitv2_election_id') .'/?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+  $election = json_decode(file_get_contents($url));
+  $cnt = 0;
+  foreach($election->categories as $cat) {
+    $url = URLBASE. $cat .'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+    $categorie = json_decode(file_get_contents($url));
+
+    $aCategories[$cnt]['id'] = $categorie->id;
+    $aCategories[$cnt]['name'] = $categorie->name;
+
+    $cnt_y = 0;
+    foreach($categorie->questions as $question) {
+      $url = URLBASE. $question .'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+      $q = json_decode(file_get_contents($url));
+
+      $aCategories[$cnt]['questions'][$cnt_y]['q'] = $q->question;
+
+      foreach($q->answers as $answers) {
+        $url = URLBASE. $answers .'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+        $a = json_decode(file_get_contents($url));
+        if( in_array('/api/v2/candidate/'.$second_candidate.'/', $a->candidates)) { $aCategories[$cnt]['questions'][$cnt_y]['a'] = $a->caption; } 
+      }
+
+      $cnt_y++;
+    }
+
+    $cnt++;
+  }
+
+  $retorna .= '<div class="row-fluid second_candidate">
+        <div class="span12">
+          <ul id="myTab" class="nav nav-pills">
+            ';
+            $cnt = 1;
+            foreach($aCategories as $cat) {
+              $active = ($cnt==1) ? 'class="active"' : '';
+              $retorna .= '<li '.$active.'><a href="#'.strtolower( str_replace(' ', '-', trim($cat['name'])) ).'-2" data-toggle="tab">'.ucfirst(strtolower($cat['name'])).'</a></li>';
+              $cnt++;
+            }
+            
+  $retorna .= '</ul>
+          <div class="tab-content">';
+            
+            $cnt = 1;
+            foreach($aCategories as $cat) {
+              
+              $retorna .= '<div class="tab-pane '. (($cnt==1) ? "active" : "") .'" id="'. strtolower( str_replace(' ', '-', trim($cat['name'])) ) .'-2">
+                <table class="table table-striped">';
+                  
+                  foreach($cat['questions'] as $question) {
+                  
+                  $retorna .= '<tr>
+                    <td><strong>'. $question['q'] .'</strong></td>
+                  </tr>
+                  <tr>
+                    <td><em>'. ((empty($question['a'])) ? 'N/I' : $question['a']) .'</em></td>
+                  </tr>';
+                  
+                  }
+                  
+              $retorna .= '</table>
+              </div>';
+              
+              $cnt++;
+            }
+            
+  $retorna .= '</div>
+        </div>
+      </div>';
+
+  echo $retorna;
+  die();
+}
+add_action('wp_ajax_get_second_candidate_data','get_second_candidate_data');
+add_action('wp_ajax_nopriv_get_second_candidate_data', 'get_second_candidate_data');

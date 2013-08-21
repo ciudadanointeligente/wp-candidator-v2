@@ -72,5 +72,21 @@ jQuery(document).ready(function($) {
         } else
             return;
         
-    })
+    });
+
+    $('select[name="candidato-comparador"]').on('change', function(){
+        var data = {
+                action : 'get_second_candidate_data',
+                cache: true,
+                first_candidate : $('input[name=first-candidate]').val(),
+                second_candidate : $(this).val()
+            }
+
+        $(".selector").after(spin);
+        $('.second_candidate').remove();
+        $.post(ajaxurl, data, function(response){
+            $("#canv2_loading").remove();
+            $('.selector').after(response);
+        });
+    });
 })
