@@ -74,11 +74,25 @@ jQuery(document).ready(function($) {
         
     });
 
+    $('select[name="candidato-comparador-1"]').on('change', function(){
+        var data = {
+                action : 'get_candidate_data',
+                cache: true,
+                first_candidate : $(this).val()
+            }
+
+        $(".selector-a").after(spin);
+        $('.first_candidate').remove();
+        $.post(ajaxurl, data, function(response){
+            $("#canv2_loading").remove();
+            $('.selector-a').after(response);
+        });
+    });
+
     $('select[name="candidato-comparador"]').on('change', function(){
         var data = {
-                action : 'get_second_candidate_data',
+                action : 'get_candidate_data',
                 cache: true,
-                first_candidate : $('input[name=first-candidate]').val(),
                 second_candidate : $(this).val()
             }
 

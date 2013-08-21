@@ -167,7 +167,7 @@ function canv2_loscandidatos() {
 
   global $post;
   $post_slug = $post->post_name;
-  $mod = $_GET['mod'];
+  $mod = htmlentities($_GET['mod']);
   $cid = intval($_GET['cid']);
 
   if ( $post_slug == 'candideitorg' ) {
@@ -266,8 +266,11 @@ function canv2_loscandidatos() {
             $cnt++;
           }
 
-          $url = URLBASE.API_VERSION.'candidate/'. $cid .'/?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
-          $aCandidate = json_decode(file_get_contents($url));
+          if($cid) {
+            $url = URLBASE.API_VERSION.'candidate/'. $cid .'/?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+            $aCandidate = json_decode(file_get_contents($url));
+          }
+          
 
           include 'html/comparador.php';
         } else {
@@ -490,13 +493,14 @@ function get_data_candidate_vs() {
 add_action('wp_ajax_get_data_candidate_vs','get_data_candidate_vs');
 add_action('wp_ajax_nopriv_get_data_candidate_vs', 'get_data_candidate_vs');
 
-function get_second_candidate_data() {
-  $second_candidate = $_POST['second_candidate'];
+function get_candidate_data() {
+  $candidate_id = ( isset($_POST['first_candidate']) ) ? $_POST['first_candidate'] : $_POST['second_candidate'];
+  $class_name = ( isset($_POST['first_candidate']) ) ? 'first_candidate' : 'second_candidate';
 
-  $url = URLBASE.API_VERSION.'candidate/'. $second_candidate .'/?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
+  $url = URLBASE.API_VERSION.'candidate/'. $candidate_id .'/?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
   $aCandidate = json_decode(file_get_contents($url));
 
-  $retorna = '<div class="row-fluid second_candidate" style="margin-bottom: 10px">
+  $retorna = '<div class="row-fluid '.$class_name.'" style="margin-bottom: 10px">
         <div class="span4">
           <img src="'. $aCandidate->photo .'" alt="'. $aCandidate->name .'">
         </div>
@@ -525,7 +529,7 @@ function get_second_candidate_data() {
       foreach($q->answers as $answers) {
         $url = URLBASE. $answers .'?format=json&username='. get_option('candideitv2_username') .'&api_key='. get_option('candideitv2_api_key');
         $a = json_decode(file_get_contents($url));
-        if( in_array('/api/v2/candidate/'.$second_candidate.'/', $a->candidates)) { $aCategories[$cnt]['questions'][$cnt_y]['a'] = $a->caption; } 
+        if( in_array('/api/v2/candidate/'.$candidate_id.'/', $a->candidates)) { $aCategories[$cnt]['questions'][$cnt_y]['a'] = $a->caption; } 
       }
 
       $cnt_y++;
@@ -534,14 +538,14 @@ function get_second_candidate_data() {
     $cnt++;
   }
 
-  $retorna .= '<div class="row-fluid second_candidate">
+  $retorna .= '<div class="row-fluid '.$class_name.'">
         <div class="span12">
           <ul id="myTab" class="nav nav-pills">
             ';
             $cnt = 1;
             foreach($aCategories as $cat) {
               $active = ($cnt==1) ? 'class="active"' : '';
-              $retorna .= '<li '.$active.'><a href="#'.strtolower( str_replace(' ', '-', trim($cat['name'])) ).'-2" data-toggle="tab">'.ucfirst(strtolower($cat['name'])).'</a></li>';
+              $retorna .= '<li '.$active.'><a href="#'.strtolower( str_replace(' ', '-', trim($cat['name'])) ).'-'.$candidate_id.'" data-toggle="tab">'.ucfirst(strtolower($cat['name'])).'</a></li>';
               $cnt++;
             }
             
@@ -551,7 +555,7 @@ function get_second_candidate_data() {
             $cnt = 1;
             foreach($aCategories as $cat) {
               
-              $retorna .= '<div class="tab-pane '. (($cnt==1) ? "active" : "") .'" id="'. strtolower( str_replace(' ', '-', trim($cat['name'])) ) .'-2">
+              $retorna .= '<div class="tab-pane '. (($cnt==1) ? "active" : "") .'" id="'. strtolower( str_replace(' ', '-', trim($cat['name'])) ) .'-'.$candidate_id.'">
                 <table class="table table-striped">';
                   
                   foreach($cat['questions'] as $question) {
@@ -578,5 +582,5 @@ function get_second_candidate_data() {
   echo $retorna;
   die();
 }
-add_action('wp_ajax_get_second_candidate_data','get_second_candidate_data');
-add_action('wp_ajax_nopriv_get_second_candidate_data', 'get_second_candidate_data');
+add_action('wp_ajax_get_candidate_data','get_candidate_data');
+add_action('wp_ajax_nopriv_get_candidate_data', 'get_candidate_data');

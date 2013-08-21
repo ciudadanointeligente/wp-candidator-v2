@@ -13,10 +13,27 @@
 		<!--first candidate-->
 		<div class="span6">
 
-			<div class="row-fluid" style="height: 54px;">
-				
+			<div class="row-fluid selector-a" style="height: 54px;">
+				<?php
+				if(count($aCandidate)==0) {
+				?>
+				<select name="candidato-comparador-1" id="candidato-comparador-1">
+					<option value="">Selecciona un candidato</option>
+					<?php
+					foreach($aCandidates as $candidate) {
+						if($_GET['cid']!=$candidate['id'])
+							echo '<option value="'.$candidate['id'].'">'.$candidate['name'].'</option>';
+					}
+					?>
+				</select>
+				<?php
+				}
+				?>
 			</div>
 
+			<?php
+			if(count($aCandidate)) {
+			?>
 			<div class="row-fluid" style="margin-bottom: 10px">
 				<div class="span4">
 					<img src="<?php echo $aCandidate->photo ?>" alt="<?php echo $aCandidate->name ?>">
@@ -66,6 +83,9 @@
 					</div>
 				</div>
 			</div>
+			<?php
+			}
+			?>
 		</div>
 		<!--eof first candidate-->
 		
