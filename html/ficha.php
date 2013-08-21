@@ -8,9 +8,9 @@
 	
 	<div class="row-fluid">
 		<div class="span6">
-			<ul class="inline">
-				<li><a href="<?php echo esc_url( home_url('candideitorg/') ) ?>">candidatos</a></li>
-				<li><a href="<?php echo esc_url( home_url('candideitorg/?mod=comparador&cid='.$_GET['cid']) ) ?>">comparar</a></li>
+			<ul class="nav nav-pills">
+				<li><a href="<?php echo esc_url( home_url('candideitorg/') ) ?>"><?php echo _('Candidates') ?></a></li>
+				<li><a href="<?php echo esc_url( home_url('candideitorg/?mod=comparador&cid='.$_GET['cid']) ) ?>"><?php echo _('Compare') ?></a></li>
 			</ul>
 		</div>
 	</div>

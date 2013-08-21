@@ -6,9 +6,9 @@
 			<?php
             if(count($aCandideits)) {
             ?>
-            <ul class="inline">
-				<!-- <li><a href="#">volver</a></li> -->
-				<li><a href="<?php echo esc_url( home_url('candideitorg/?mod=comparador') ) ?>">comparar</a></li>
+            <ul class="nav nav-pills">
+                <li class="active"><a href="#"><?php echo _('Candidates') ?></a></li>
+				<li><a href="<?php echo esc_url( home_url('candideitorg/?mod=comparador') ) ?>"><?php echo _('Compare') ?></a></li>
 			</ul>
             <?php
             }
